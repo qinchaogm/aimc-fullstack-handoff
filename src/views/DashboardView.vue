@@ -155,7 +155,7 @@ const tabTitle = computed(() => visibleTabs.value.find((t) => t.key === tab.valu
       <header class="dashboard-top">
         <h1 class="text-base font-semibold text-white">{{ tabTitle }}</h1>
         <p class="hidden text-xs text-slate-500 sm:block">
-          +86 {{ me.phone.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2") }}
+        {{ me.phone.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2") }}
         </p>
       </header>
 
@@ -169,7 +169,7 @@ const tabTitle = computed(() => visibleTabs.value.find((t) => t.key === tab.valu
             <div class="grid gap-5 sm:grid-cols-2">
               <div>
                 <p class="mb-1.5 text-sm text-slate-200">手机号</p>
-                <el-input :model-value="`+86 ${me.phone}`" disabled />
+                <el-input :model-value="`${me.phone}`" disabled />
               </div>
               <div>
                 <p class="mb-1.5 text-sm text-slate-200">账号身份</p>

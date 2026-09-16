@@ -31,7 +31,7 @@ function send() {
   ElMessage({
     type: "success",
     duration: 6000,
-    message: `验证码已发送至 +86 ${props.phone}（演示码 ${MOCK_SMS_CODE}）`,
+    message: `验证码已发送至 ${props.phone}（演示码 ${MOCK_SMS_CODE}）`,
   });
 }
 

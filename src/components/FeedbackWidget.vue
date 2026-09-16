@@ -125,15 +125,15 @@ async function onSubmit() {
     <div class="feedback-rail">
       <div class="feedback-mail">
         <div class="feedback-pop">
-          <p class="text-[13px] text-neutral-600">联系邮箱</p>
+          <p class="text-[13px] text-cyan-200/80">联系邮箱</p>
           <div class="mt-1 flex items-center gap-1.5">
-            <span class="text-[14px] leading-5 font-medium whitespace-nowrap text-neutral-900">{{ CONTEST.supportEmail }}</span>
+            <span class="text-[14px] leading-5 font-medium whitespace-nowrap text-cyan-50">{{ CONTEST.supportEmail }}</span>
             <button
               type="button"
               :class="
                 cn(
                   'inline-flex shrink-0 rounded p-0.5 transition-colors',
-                  copied ? 'text-blue-600' : 'text-neutral-900',
+                  copied ? 'text-cyan-300' : 'text-cyan-100/90',
                 )
               "
               :aria-label="copied ? '已复制' : '复制邮箱'"
