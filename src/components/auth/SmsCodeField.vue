@@ -56,7 +56,7 @@ onUnmounted(() => {
       </div>
       <button
         type="button"
-        class="h-10 w-28 shrink-0 rounded-lg bg-tech-blue text-sm text-white hover:bg-tech-blue/90 disabled:bg-tech-blue/40 disabled:text-white/70"
+        class="h-10 w-28 shrink-0 rounded-[8px] bg-tech-blue text-sm text-white hover:bg-tech-blue/90 disabled:bg-tech-blue/40 disabled:text-white/70"
         :disabled="countdown > 0"
         @click="send"
       >

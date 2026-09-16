@@ -256,6 +256,16 @@
       linear-gradient(180deg, #041822 0%, #020b12 38%, #01080e 100%);
     background-attachment: fixed;
   }
+  a[href],
+  button:not(:disabled),
+  [role="button"],
+  summary {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
   h1,
   h2,
   h3 {

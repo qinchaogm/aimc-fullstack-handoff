@@ -38,6 +38,16 @@ installApiMock(async (config) => {
     if (!res.ok) throw Object.assign(new Error(res.error), { response: { data: { error: res.error } } });
     return res.data;
   }
+  if (method === "post" && url.includes("/auth/verify-reset")) {
+    const res = store.verifyResetIdentity(body.phone, body.code);
+    if (!res.ok) throw Object.assign(new Error(res.error), { response: { data: { error: res.error } } });
+    return res.data;
+  }
+  if (method === "post" && url.includes("/auth/reset-password")) {
+    const res = store.resetPassword(body);
+    if (!res.ok) throw Object.assign(new Error(res.error), { response: { data: { error: res.error } } });
+    return res.data;
+  }
   if (method === "post" && url.includes("/messages")) {
     const res = store.submitMessage(body);
     if (!res.ok) throw Object.assign(new Error(res.error), { response: { data: { error: res.error } } });

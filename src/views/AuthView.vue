@@ -20,6 +20,7 @@ const props = defineProps<{ mode: "login" | "register" }>();
 const route = useRoute();
 const router = useRouter();
 const tab = ref("sms");
+const loginPanel = ref<"login" | "verify" | "reset">("login");
 const phone = ref("");
 const code = ref("");
 const account = ref("");
@@ -28,6 +29,11 @@ const username = ref("");
 const agreed = ref(false);
 const shake = ref(false);
 const phoneInvalid = ref(false);
+const resetPhone = ref("");
+const resetCode = ref("");
+const resetPhoneInvalid = ref(false);
+const newPassword = ref("");
+const confirmPassword = ref("");
 
 const authOrganizers = ORGANIZER_GROUPS.filter((g) => g.role === "指导单位" || g.role === "主办单位");
 
@@ -95,6 +101,53 @@ async function onRegister() {
   router.replace("/");
 }
 
+function showForgotPassword() {
+  resetPhone.value = PHONE_RE.test(account.value) ? account.value : PHONE_RE.test(phone.value) ? phone.value : "";
+  resetCode.value = "";
+  resetPhoneInvalid.value = false;
+  newPassword.value = "";
+  confirmPassword.value = "";
+  loginPanel.value = "verify";
+}
+
+function backToLogin() {
+  loginPanel.value = "login";
+  tab.value = "password";
+}
+
+async function onVerifyReset() {
+  if (!PHONE_RE.test(resetPhone.value)) {
+    resetPhoneInvalid.value = true;
+    ElMessage.error("请输入正确的手机号");
+    return;
+  }
+  resetPhoneInvalid.value = false;
+  if (!resetCode.value) return ElMessage.error("请输入验证码");
+  await http.post("/auth/verify-reset", { phone: resetPhone.value, code: resetCode.value });
+  ElMessage.success("身份验证通过，请设置新密码");
+  loginPanel.value = "reset";
+}
+
+async function onResetPassword() {
+  if (!PASSWORD_RULES.valid(newPassword.value)) {
+    return ElMessage.error("密码不符合安全要求，请按提示修改");
+  }
+  if (newPassword.value !== confirmPassword.value) {
+    return ElMessage.error("两次输入的密码不一致");
+  }
+  await http.post<User>("/auth/reset-password", {
+    phone: resetPhone.value,
+    code: resetCode.value,
+    password: newPassword.value,
+  });
+  ElMessage.success("密码重置成功，请使用新密码登录");
+  account.value = resetPhone.value;
+  password.value = "";
+  window.setTimeout(() => {
+    backToLogin();
+  }, 900);
+}
+
 const corner = computed(() =>
   props.mode === "login" ? { href: "/register", label: "注册账号" } : { href: "/login", label: "去登录" },
 );
@@ -152,34 +205,88 @@ const corner = computed(() =>
 
       <section class="auth-side">
         <div class="auth-panel">
-          <RouterLink :to="corner.href" class="auth-text-link">{{ corner.label }}</RouterLink>
+          <button
+            v-if="mode === 'login' && loginPanel !== 'login'"
+            type="button"
+            class="auth-text-link"
+            @click="backToLogin"
+          >
+            返回登录
+          </button>
+          <RouterLink v-else :to="corner.href" class="auth-text-link">
+            {{ corner.label }}
+          </RouterLink>
 
           <template v-if="mode === 'login'">
-            <div class="flex gap-7">
-              <button type="button" :class="cn('auth-tab', tab === 'sms' && 'is-active')" @click="tab = 'sms'">
-                短信登录
-              </button>
-              <button type="button" :class="cn('auth-tab', tab === 'password' && 'is-active')" @click="tab = 'password'">
-                账号登录
-              </button>
-            </div>
+            <template v-if="loginPanel === 'login'">
+              <div class="flex gap-7">
+                <button type="button" :class="cn('auth-tab', tab === 'sms' && 'is-active')" @click="tab = 'sms'">
+                  短信登录
+                </button>
+                <button
+                  type="button"
+                  :class="cn('auth-tab', tab === 'password' && 'is-active')"
+                  @click="tab = 'password'"
+                >
+                  账号登录
+                </button>
+              </div>
 
-            <form v-if="tab === 'sms'" class="mt-6 space-y-4" novalidate @submit.prevent="onSms">
-              <PhoneField v-model="phone" :invalid="phoneInvalid" />
-              <SmsCodeField v-model="code" :phone="phone" />
-              <AgreementCheckbox v-model="agreed" :shake="shake" />
-              <button type="submit" class="auth-submit">登录</button>
-              <p class="text-center text-xs text-slate-500">未注册的手机号验证后将自动创建账号</p>
+              <form v-if="tab === 'sms'" class="mt-6 space-y-4" novalidate @submit.prevent="onSms">
+                <PhoneField v-model="phone" :invalid="phoneInvalid" />
+                <SmsCodeField v-model="code" :phone="phone" />
+                <AgreementCheckbox v-model="agreed" :shake="shake" />
+                <button type="submit" class="auth-submit">登录</button>
+                <p class="text-center text-xs text-slate-500">未注册的手机号验证后将自动创建账号</p>
+              </form>
+
+              <form v-else class="mt-6 space-y-4" novalidate @submit.prevent="onPwd">
+                <div>
+                  <label class="apply-field-label mb-1.5">手机号</label>
+                  <ClearableInput v-model="account" placeholder="请输入手机号" autocomplete="username" />
+                </div>
+                <PasswordField
+                  v-model="password"
+                  autocomplete="current-password"
+                  show-forgot
+                  @forgot="showForgotPassword"
+                />
+                <AgreementCheckbox v-model="agreed" :shake="shake" />
+                <button type="submit" class="auth-submit">登录</button>
+              </form>
+            </template>
+
+            <form v-else-if="loginPanel === 'verify'" class="auth-reset-form" novalidate @submit.prevent="onVerifyReset">
+              <div>
+                <h2 class="auth-panel-title">身份验证</h2>
+                <p class="auth-panel-desc">为确保账号安全，请先进行身份验证</p>
+              </div>
+              <div>
+                <PhoneField v-model="resetPhone" :invalid="resetPhoneInvalid" />
+              </div>
+              <SmsCodeField v-model="resetCode" :phone="resetPhone" />
+              <button type="submit" class="auth-submit">验 证</button>
             </form>
 
-            <form v-else class="mt-6 space-y-4" novalidate @submit.prevent="onPwd">
+            <form v-else class="auth-reset-form" novalidate @submit.prevent="onResetPassword">
               <div>
-                <label class="apply-field-label mb-1.5">手机号</label>
-                <ClearableInput v-model="account" placeholder="请输入手机号" autocomplete="username" />
+                <h2 class="auth-panel-title">新密码</h2>
+                <p class="auth-panel-desc">请重新设置账号密码</p>
               </div>
-              <PasswordField v-model="password" autocomplete="current-password" />
-              <AgreementCheckbox v-model="agreed" :shake="shake" />
-              <button type="submit" class="auth-submit">登录</button>
+              <PasswordField
+                v-model="newPassword"
+                label="设置密码"
+                show-rules
+                placeholder="请输入账号密码"
+                autocomplete="new-password"
+              />
+              <PasswordField
+                v-model="confirmPassword"
+                label="再次输入密码"
+                placeholder="请输入账号密码"
+                autocomplete="new-password"
+              />
+              <button type="submit" class="auth-submit">完 成</button>
             </form>
           </template>
 
@@ -424,6 +531,19 @@ const corner = computed(() =>
   font-size: 20px;
   font-weight: 600;
   color: #fff;
+}
+
+.auth-panel-desc {
+  margin-top: 14px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #8ea9cf;
+}
+
+.auth-reset-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 .auth-submit {

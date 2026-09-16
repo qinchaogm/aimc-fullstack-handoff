@@ -351,6 +351,32 @@ export const useAppStore = defineStore("app", () => {
     return { ok: true, data: user };
   }
 
+  function verifyResetIdentity(phone: string, code: string): Result<{ phone: string }> {
+    if (!PHONE_RE.test(phone)) return { ok: false, error: "请输入正确的手机号" };
+    if (code !== MOCK_SMS_CODE) return { ok: false, error: "验证码错误，请重新输入" };
+    const user = users.value.find((u) => u.phone === phone);
+    if (!user) return { ok: false, error: "该手机号尚未注册" };
+    if (user.status === "disabled") return { ok: false, error: "该账号已被禁用，请联系组委会" };
+    return { ok: true, data: { phone } };
+  }
+
+  function resetPassword(input: { phone: string; code: string; password: string }): Result<User> {
+    const verified = verifyResetIdentity(input.phone, input.code);
+    if (!verified.ok) return verified;
+    if (!PASSWORD_RULES.valid(input.password)) return { ok: false, error: "密码不符合安全要求" };
+    const user = users.value.find((u) => u.phone === input.phone);
+    if (!user) return { ok: false, error: "该手机号尚未注册" };
+    user.password = input.password;
+    persist();
+    pushNotification({
+      userId: user.id,
+      title: "密码已重置",
+      body: "您的账号密码已完成重置，如非本人操作请及时联系组委会。",
+      type: "system",
+    });
+    return { ok: true, data: user };
+  }
+
   function logout() {
     currentUserId.value = null;
     persist();
@@ -1009,6 +1035,8 @@ export const useAppStore = defineStore("app", () => {
     loginWithSms,
     loginWithPassword,
     register,
+    verifyResetIdentity,
+    resetPassword,
     logout,
     updateProfile,
     submitRegistration,
