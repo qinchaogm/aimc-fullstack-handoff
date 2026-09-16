@@ -239,6 +239,11 @@
       font-size: 110%;
     }
   }
+  html:has(.auth-page) {
+    /* 认证页按视口排版，避免全站 110% 缩放把表单和单位信息推出首屏。 */
+    zoom: 1;
+    font-size: 100%;
+  }
   body {
     background-color: var(--background); color: var(--foreground);
     font-family:
@@ -1172,7 +1177,7 @@
   bottom: 0;
   height: 0.14rem;
   border-radius: 999px;
-  background: #3d8bff;
+  background: var(--tech-cyan);
   opacity: 0;
   transition: opacity 0.2s;
 }

@@ -3,8 +3,8 @@ import { computed } from "vue";
 import { RouterLink } from "vue-router";
 
 const props = withDefaults(
-  defineProps<{ compact?: boolean; fullName?: boolean }>(),
-  { compact: false, fullName: false },
+  defineProps<{ compact?: boolean; fullName?: boolean; cyanTone?: boolean }>(),
+  { compact: false, fullName: false, cyanTone: false },
 );
 
 const r = (n: number) => Math.round(n * 1000) / 1000;
@@ -59,7 +59,8 @@ const teeth = computed(() =>
     <span v-else-if="!compact" class="flex flex-col leading-none">
       <span class="font-display text-[13px] font-black tracking-[0.08em] text-[#3aa4ff]">AI原生智能工厂</span>
       <span
-        class="mt-1 inline-block origin-left -skew-x-[12deg] bg-linear-to-r from-[#2ea8ff] via-[#7c5cff] to-[#e879f9] bg-clip-text text-[11px] font-black tracking-[0.22em] text-transparent"
+        class="mt-1 inline-block origin-left -skew-x-[12deg] bg-linear-to-r bg-clip-text text-[11px] font-black tracking-[0.22em] text-transparent"
+        :class="props.cyanTone ? 'from-sky-400 via-cyan-300 to-teal-300' : 'from-[#2ea8ff] via-[#7c5cff] to-[#e879f9]'"
       >
         创新应用大赛
       </span>

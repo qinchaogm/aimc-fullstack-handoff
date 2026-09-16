@@ -29,9 +29,7 @@ const agreed = ref(false);
 const shake = ref(false);
 const phoneInvalid = ref(false);
 
-const footChips = ORGANIZER_GROUPS.filter((g) => g.role === "指导单位" || g.role === "主办单位").flatMap((g) =>
-  g.names.map((name) => ({ role: g.role, name })),
-);
+const authOrganizers = ORGANIZER_GROUPS.filter((g) => g.role === "指导单位" || g.role === "主办单位");
 
 function afterLogin(user: User) {
   ElMessage.success(`欢迎回来，${user.username}`);
@@ -83,7 +81,7 @@ async function onRegister() {
   phoneInvalid.value = false;
   if (!code.value) return ElMessage.error("请输入验证码");
   if (!username.value.trim()) return ElMessage.error("请输入用户名");
-  if (!PASSWORD_RULES.composition(password.value) || !PASSWORD_RULES.length(password.value)) {
+  if (!PASSWORD_RULES.valid(password.value)) {
     return ElMessage.error("密码不符合安全要求，请按提示修改");
   }
   if (!requireAgreement()) return;
@@ -141,23 +139,14 @@ const corner = computed(() =>
       <RouterLink to="/" class="auth-home">返回首页</RouterLink>
       <section class="auth-hero">
         <div class="pr-16">
-          <BrandLogo />
+          <BrandLogo cyan-tone />
         </div>
-        <div class="mt-10 lg:mt-14">
+        <div class="auth-hero-heading">
           <h1 class="auth-title">{{ CONTEST.name }}</h1>
           <p class="auth-subtitle">面向全国征集可落地的工业 AI 方案，探索无限可能</p>
         </div>
         <div class="auth-art">
-          <HeroArtwork class="w-[min(100%,460px)]" />
-        </div>
-        <div class="auth-hero-foot">
-          <div class="auth-orgs">
-            <span v-for="item in footChips" :key="item.name" class="auth-org">
-              <em>{{ item.role }}</em>
-              {{ item.name }}
-            </span>
-          </div>
-          <p class="auth-copy">© {{ CONTEST.year }} 上海电气 {{ CONTEST.name }}</p>
+          <HeroArtwork class="auth-artwork" />
         </div>
       </section>
 
@@ -175,7 +164,7 @@ const corner = computed(() =>
               </button>
             </div>
 
-            <form v-if="tab === 'sms'" class="mt-7 space-y-5" novalidate @submit.prevent="onSms">
+            <form v-if="tab === 'sms'" class="mt-6 space-y-4" novalidate @submit.prevent="onSms">
               <PhoneField v-model="phone" :invalid="phoneInvalid" />
               <SmsCodeField v-model="code" :phone="phone" />
               <AgreementCheckbox v-model="agreed" :shake="shake" />
@@ -183,10 +172,10 @@ const corner = computed(() =>
               <p class="text-center text-xs text-slate-500">未注册的手机号验证后将自动创建账号</p>
             </form>
 
-            <form v-else class="mt-7 space-y-5" novalidate @submit.prevent="onPwd">
+            <form v-else class="mt-6 space-y-4" novalidate @submit.prevent="onPwd">
               <div>
-                <label class="apply-field-label mb-1.5">手机号 / 用户名</label>
-                <ClearableInput v-model="account" placeholder="请输入手机号或用户名" autocomplete="username" />
+                <label class="apply-field-label mb-1.5">手机号</label>
+                <ClearableInput v-model="account" placeholder="请输入手机号" autocomplete="username" />
               </div>
               <PasswordField v-model="password" autocomplete="current-password" />
               <AgreementCheckbox v-model="agreed" :shake="shake" />
@@ -194,7 +183,7 @@ const corner = computed(() =>
             </form>
           </template>
 
-          <form v-else class="space-y-5" novalidate @submit.prevent="onRegister">
+          <form v-else class="space-y-4" novalidate @submit.prevent="onRegister">
             <h2 class="auth-panel-title">账号注册</h2>
             <PhoneField v-model="phone" :invalid="phoneInvalid" />
             <SmsCodeField v-model="code" :phone="phone" />
@@ -214,6 +203,18 @@ const corner = computed(() =>
           </form>
         </div>
       </section>
+
+      <footer class="auth-hero-foot">
+        <div class="auth-orgs">
+          <div v-for="group in authOrganizers" :key="group.role" class="auth-org-group">
+            <span class="auth-org-role">{{ group.role }}</span>
+            <div class="auth-org-names">
+              <span v-for="name in group.names" :key="name">{{ name }}</span>
+            </div>
+          </div>
+        </div>
+        <p class="auth-copy">© {{ CONTEST.year }} 上海电气 {{ CONTEST.name }}</p>
+      </footer>
     </div>
   </div>
 </template>
@@ -221,8 +222,8 @@ const corner = computed(() =>
 <style scoped>
 .auth-page {
   position: relative;
-  min-height: 100vh;
-  overflow: hidden;
+  min-height: 100svh;
+  overflow-x: clip;
   background: #061433;
   color: #e8f1ff;
 }
@@ -231,6 +232,7 @@ const corner = computed(() =>
   pointer-events: none;
   position: absolute;
   inset: 0;
+  overflow: hidden;
 }
 
 .auth-glow {
@@ -277,21 +279,22 @@ const corner = computed(() =>
 .auth-shell {
   position: relative;
   z-index: 1;
-  display: grid;
-  min-height: 100vh;
-  width: min(1280px, calc(100% - 2rem));
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  width: min(520px, calc(100% - 2rem));
   margin: 0 auto;
-  padding: 28px 0 36px;
-  gap: 32px;
+  padding: 24px 0 32px;
+  gap: 24px;
 }
 
 .auth-home {
   position: absolute;
-  top: 32px;
+  top: 28px;
   right: 0;
   z-index: 3;
   font-size: 12px;
-  color: #8aa0c4;
+  color: #67e8f9;
   transition: color 0.2s;
 }
 
@@ -305,8 +308,12 @@ const corner = computed(() =>
   flex-direction: column;
 }
 
+.auth-hero-heading {
+  margin-top: 24px;
+}
+
 .auth-title {
-  font-size: clamp(2rem, 4.2vw, 3.15rem);
+  font-size: clamp(1.5rem, 5vw, 2rem);
   font-weight: 700;
   letter-spacing: 0.04em;
   line-height: 1.2;
@@ -315,7 +322,7 @@ const corner = computed(() =>
 }
 
 .auth-subtitle {
-  margin-top: 12px;
+  margin-top: 8px;
   max-width: 28rem;
   font-size: 15px;
   line-height: 1.7;
@@ -327,53 +334,72 @@ const corner = computed(() =>
   flex: 1;
   align-items: center;
   justify-content: center;
-  padding: 8px 0 12px;
+  min-height: 0;
+  padding: 4px 0;
+}
+
+.auth-artwork {
+  width: min(100%, 38svh, 380px);
 }
 
 .auth-hero-foot {
-  margin-top: auto;
-  padding-top: 20px;
+  min-width: 0;
+  border-top: 1px solid rgba(34, 211, 238, 0.2);
+  padding-top: 12px;
 }
 
 .auth-orgs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 18px;
+  display: grid;
+  gap: 8px;
 }
 
-.auth-org {
+.auth-org-group {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+}
+
+.auth-org-role {
+  border-radius: 4px;
+  background: rgba(34, 211, 238, 0.1);
+  padding: 2px 4px;
+  text-align: center;
+  font-size: 11px;
+  white-space: nowrap;
+  color: #67e8f9;
+}
+
+.auth-org-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding-top: 2px;
   font-size: 12px;
+  line-height: 1.5;
   color: #d7e4f8;
 }
 
-.auth-org em {
-  margin-right: 6px;
-  font-style: normal;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: #7f98bf;
-}
-
 .auth-copy {
-  margin-top: 14px;
-  font-size: 12px;
+  margin-top: 10px;
+  font-size: 11px;
   color: #6d86b0;
 }
 
 .auth-side {
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  align-items: flex-start;
+  justify-content: center;
 }
 
 .auth-panel {
   position: relative;
-  width: min(100%, 420px);
-  padding: 36px 32px 28px;
+  width: min(100%, 440px);
+  padding: 30px 28px 26px;
   border-radius: 16px;
-  border: 1px solid rgba(130, 170, 255, 0.22);
-  background: linear-gradient(180deg, rgba(24, 52, 112, 0.52) 0%, rgba(12, 28, 72, 0.62) 100%);
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  background: linear-gradient(180deg, rgba(16, 47, 85, 0.78) 0%, rgba(9, 30, 63, 0.86) 100%);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.04) inset,
     0 28px 80px -28px rgba(8, 24, 80, 0.85);
@@ -382,10 +408,10 @@ const corner = computed(() =>
 
 .auth-text-link {
   position: absolute;
-  top: 18px;
-  right: 24px;
+  top: 16px;
+  right: 20px;
   font-size: 13px;
-  color: #8eb0e8;
+  color: #67e8f9;
   transition: color 0.2s;
 }
 
@@ -394,7 +420,7 @@ const corner = computed(() =>
 }
 
 .auth-panel-title {
-  padding-top: 8px;
+  padding-top: 4px;
   font-size: 20px;
   font-weight: 600;
   color: #fff;
@@ -404,12 +430,12 @@ const corner = computed(() =>
   height: 44px;
   width: 100%;
   border-radius: 8px;
-  background: linear-gradient(180deg, #3d8bff 0%, #1d6ef5 100%);
+  background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
   font-size: 16px;
   font-weight: 600;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.12em;
   color: #fff;
-  box-shadow: 0 12px 28px -10px rgba(29, 110, 245, 0.85);
+  box-shadow: 0 12px 28px -10px rgba(14, 165, 233, 0.65);
   transition:
     transform 0.2s,
     filter 0.2s;
@@ -422,11 +448,32 @@ const corner = computed(() =>
 
 @media (min-width: 1024px) {
   .auth-shell {
+    display: grid;
+    height: 100svh;
+    min-height: 740px;
     grid-template-columns: minmax(0, 1.15fr) minmax(380px, 460px);
     align-items: stretch;
     width: min(1200px, calc(100% - 64px));
-    padding: 36px 0 28px;
-    gap: 48px;
+    padding: 24px 0;
+    gap: 40px;
+  }
+
+  .auth-hero {
+    grid-column: 1;
+    grid-row: 1;
+    padding-bottom: 112px;
+  }
+
+  .auth-hero-heading {
+    margin-top: 32px;
+  }
+
+  .auth-title {
+    font-size: clamp(2rem, 3.6vw, 3rem);
+  }
+
+  .auth-subtitle {
+    margin-top: 10px;
   }
 
   .auth-art {
@@ -434,7 +481,17 @@ const corner = computed(() =>
   }
 
   .auth-side {
-    padding-top: 40px;
+    grid-column: 2;
+    grid-row: 1;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .auth-hero-foot {
+    position: absolute;
+    right: 500px;
+    bottom: 24px;
+    left: 0;
   }
 }
 </style>

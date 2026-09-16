@@ -74,14 +74,42 @@ export const NOTICE_TARGET_LABEL: Record<NoticeTarget, string> = {
 
 export type Result<T = void> = { ok: true; data: T } | { ok: false; error: string };
 
+const KEYBOARD_ROWS = ["1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm"];
+const SHIFTED_NUMBER_KEYS: Record<string, string> = {
+  "!": "1",
+  "@": "2",
+  "#": "3",
+  $: "4",
+  "%": "5",
+  "^": "6",
+  "&": "7",
+  "*": "8",
+  "(": "9",
+  ")": "0",
+};
+
+function containsKeyboardSequence(pwd: string) {
+  const normalized = [...pwd.toLowerCase()].map((char) => SHIFTED_NUMBER_KEYS[char] ?? char).join("");
+  return KEYBOARD_ROWS.some((row) => {
+    const reversedRow = [...row].reverse().join("");
+    for (let index = 0; index <= normalized.length - 3; index += 1) {
+      const sequence = normalized.slice(index, index + 3);
+      if (row.includes(sequence) || reversedRow.includes(sequence)) return true;
+    }
+    return false;
+  });
+}
+
 export const PASSWORD_RULES = {
-  composition: (pwd: string) =>
-    /[A-Z]/.test(pwd) &&
-    /[a-z]/.test(pwd) &&
-    /\d/.test(pwd) &&
-    !/\s/.test(pwd) &&
-    /^[A-Za-z\d!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]+$/.test(pwd),
   length: (pwd: string) => pwd.length >= 8 && pwd.length <= 20,
+  uppercase: (pwd: string) => /[A-Z]/.test(pwd),
+  noRepeatedCharacters: (pwd: string) => !/([\s\S])\1\1/u.test(pwd),
+  noKeyboardSequence: (pwd: string) => !containsKeyboardSequence(pwd),
+  valid: (pwd: string) =>
+    PASSWORD_RULES.length(pwd) &&
+    PASSWORD_RULES.uppercase(pwd) &&
+    PASSWORD_RULES.noRepeatedCharacters(pwd) &&
+    PASSWORD_RULES.noKeyboardSequence(pwd),
 };
 
 interface PersistedState {
@@ -298,7 +326,7 @@ export const useAppStore = defineStore("app", () => {
     if (!input.username.trim()) return { ok: false, error: "请输入用户名" };
     if (users.value.some((u) => u.phone === input.phone)) return { ok: false, error: "该手机号已注册，请直接登录" };
     if (users.value.some((u) => u.username === input.username.trim())) return { ok: false, error: "用户名已被占用" };
-    if (!PASSWORD_RULES.composition(input.password) || !PASSWORD_RULES.length(input.password)) {
+    if (!PASSWORD_RULES.valid(input.password)) {
       return { ok: false, error: "密码不符合安全要求" };
     }
     const user: User = {
@@ -799,8 +827,8 @@ export const useAppStore = defineStore("app", () => {
     if (users.value.some((u) => u.username === username && u.id !== input.id)) {
       return { ok: false, error: "用户名已被占用" };
     }
-    if (!input.id && (!PASSWORD_RULES.composition(input.password) || !PASSWORD_RULES.length(input.password))) {
-      return { ok: false, error: "密码需 8–20 位，含大小写字母与数字" };
+    if ((!input.id || input.password) && !PASSWORD_RULES.valid(input.password)) {
+      return { ok: false, error: "密码需 8–20 位、至少含 1 个大写字母，且不能有三连重复字符或键盘连续三键" };
     }
     if (input.id) {
       const prev = users.value.find((u) => u.id === input.id);

@@ -2,7 +2,6 @@
 import { computed, ref } from "vue";
 import { Check, Eye, EyeOff, X } from "lucide-vue-next";
 import { PASSWORD_RULES } from "@/stores/app";
-import { cn } from "@/utils/cn";
 
 const props = withDefaults(
   defineProps<{
@@ -18,13 +17,7 @@ const props = withDefaults(
 const emit = defineEmits<{ "update:modelValue": [string] }>();
 const visible = ref(false);
 
-const rules = computed(() => [
-  {
-    ok: PASSWORD_RULES.composition(props.modelValue),
-    text: "必须包含大写、小写字母和数字，支持常见特殊字符（空格除外）",
-  },
-  { ok: PASSWORD_RULES.length(props.modelValue), text: "密码长度为 8-20 位字符" },
-]);
+const passwordValid = computed(() => PASSWORD_RULES.valid(props.modelValue));
 </script>
 
 <template>
@@ -51,21 +44,14 @@ const rules = computed(() => [
         <Eye v-else class="size-4" />
       </button>
     </div>
-    <ul v-if="showRules" class="mt-2 space-y-1">
-      <li
-        v-for="r in rules"
-        :key="r.text"
-        :class="
-          cn(
-            'flex items-start gap-1.5 text-xs transition-colors',
-            modelValue.length === 0 ? 'text-slate-500' : r.ok ? 'text-emerald-400' : 'text-rose-400',
-          )
-        "
-      >
-        <X v-if="modelValue.length > 0 && !r.ok" class="mt-0.5 size-3.5 shrink-0" />
-        <Check v-else class="mt-0.5 size-3.5 shrink-0" />
-        {{ r.text }}
-      </li>
-    </ul>
+    <p
+      v-if="showRules"
+      class="mt-2 flex items-start gap-1.5 text-xs transition-colors"
+      :class="modelValue.length === 0 ? 'text-slate-500' : passwordValid ? 'text-emerald-400' : 'text-rose-400'"
+    >
+      <X v-if="modelValue.length > 0 && !passwordValid" class="mt-0.5 size-3.5 shrink-0" />
+      <Check v-else class="mt-0.5 size-3.5 shrink-0" />
+      <span>密码须为8–20位，至少包含1个大写字母，且不得出现连续三个相同字符或键盘连续三键（如 aaa、123）。</span>
+    </p>
   </div>
 </template>
