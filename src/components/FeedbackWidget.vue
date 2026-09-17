@@ -185,7 +185,7 @@ async function onSubmit() {
             </span>
           </template>
           <div class="feedback-attach-row">
-            <div "item in attachments" :key="item.id" class="feedback-thumb">
+            <div v-for="item in attachments" :key="item.id" class="feedback-thumb">
               <img :src="item.url" :alt="item.name" />
               <button type="button" class="feedback-thumb-remove" aria-label="移除图片" @click="removeAttachment(item.id)">
                 <X class="size-3.5" :stroke-width="2.4" />
