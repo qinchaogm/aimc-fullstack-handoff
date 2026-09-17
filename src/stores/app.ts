@@ -400,6 +400,7 @@ export const useAppStore = defineStore("app", () => {
         ...prev,
         projectName: input.projectName,
         organizationName: input.organizationName,
+        isDian: input.isDian ?? "否",
         leaderName: input.leaderName,
         leaderTitle: input.leaderTitle,
         organizationCity: input.organizationCity,

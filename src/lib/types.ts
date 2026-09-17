@@ -70,6 +70,8 @@ export interface Registration {
   projectName: string;
   /** 单位全称 */
   organizationName: string;
+  /** 是否上海电气内部企业 */
+  isDian?: string;
   /** 项目负责人 */
   leaderName: string;
   /** 负责人职务 */

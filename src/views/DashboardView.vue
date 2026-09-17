@@ -5,7 +5,6 @@ import { ElMessage } from "element-plus";
 import {
   Bell,
   CheckCheck,
-  ClipboardList,
   Home,
   LogOut,
   ShieldCheck,
@@ -46,7 +45,6 @@ function setTab(key: TabKey) {
   router.replace({ query: { ...route.query, tab: key } });
 }
 
-const hasProject = computed(() => !!me.value && store.registrations.some((r) => r.userId === me.value!.id));
 const unread = computed(() =>
   store.notifications.filter((n) => !n.read && (n.userId === "all" || n.userId === me.value?.id)).length,
 );
@@ -131,14 +129,6 @@ const tabTitle = computed(() => visibleTabs.value.find((t) => t.key === tab.valu
       </nav>
 
       <div class="dashboard-side-foot">
-        <RouterLink
-          v-if="me.role === 'user' && store.contestStage === 'registration'"
-          to="/apply"
-          class="dashboard-nav-item"
-        >
-          <ClipboardList class="size-4" />
-          {{ hasProject ? "修改报名信息" : "我要报名" }}
-        </RouterLink>
         <RouterLink v-if="me.role === 'admin'" to="/admin/registrations" class="dashboard-nav-item">
           <ShieldCheck class="size-4" /> 管理后台
         </RouterLink>
@@ -199,8 +189,8 @@ const tabTitle = computed(() => visibleTabs.value.find((t) => t.key === tab.valu
 
           <DashboardContest v-else-if="tab === 'contest'" />
 
-          <div v-else>
-            <div class="flex items-center justify-between gap-3">
+          <div v-else class="dashboard-notifications">
+            <div class="dashboard-notifications-head">
               <div>
                 <h2 class="text-lg font-semibold text-white">消息通知</h2>
                 <p class="mt-1 text-sm text-slate-400">赛事公告、审核结果与系统消息，点击未读消息即可标为已读。</p>
@@ -213,11 +203,11 @@ const tabTitle = computed(() => visibleTabs.value.find((t) => t.key === tab.valu
                 <CheckCheck class="size-4" /> 全部已读
               </button>
             </div>
-            <div v-if="!inbox.length" class="flex min-h-[300px] flex-col items-center justify-center text-slate-500">
+            <div v-if="!inbox.length" class="dashboard-notifications-empty">
               <Bell class="size-8" />
               <p class="mt-3 text-sm">暂无消息</p>
             </div>
-            <ul v-else class="mt-6 divide-y divide-white/8">
+            <ul v-else class="dashboard-notifications-list">
               <li
                 v-for="n in inbox"
                 :key="n.id"
@@ -251,15 +241,32 @@ const tabTitle = computed(() => visibleTabs.value.find((t) => t.key === tab.valu
 </template>
 
 <style scoped>
+:global(html:has(.dashboard-shell)),
+:global(body:has(.dashboard-shell)),
+:global(#app:has(.dashboard-shell)) {
+  height: 100%;
+  overflow: hidden;
+}
+
+:global(html:has(.dashboard-shell)) {
+  zoom: 1;
+  font-size: 100%;
+}
+
 .dashboard-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
   background: #020617;
   color: #e2e8f0;
 }
 
 .dashboard-side {
   display: flex;
+  height: 100dvh;
+  min-height: 0;
   width: 240px;
   flex-shrink: 0;
   flex-direction: column;
@@ -316,13 +323,17 @@ const tabTitle = computed(() => visibleTabs.value.find((t) => t.key === tab.valu
 
 .dashboard-main {
   display: flex;
+  height: 100dvh;
+  min-height: 0;
   min-width: 0;
   flex: 1;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .dashboard-top {
   display: flex;
+  flex-shrink: 0;
   height: 56px;
   align-items: center;
   justify-content: space-between;
@@ -334,17 +345,58 @@ const tabTitle = computed(() => visibleTabs.value.find((t) => t.key === tab.valu
 }
 
 .dashboard-content {
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  min-height: 0;
   overflow: auto;
   padding: 20px 24px 32px;
 }
 
 .dashboard-panel {
-  min-height: calc(100vh - 120px);
+  flex: 1;
+  min-height: 0;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.03);
   padding: 24px;
+}
+
+.dashboard-notifications {
+  display: flex;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+}
+
+.dashboard-notifications-head {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dashboard-notifications-empty {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.dashboard-notifications-list {
+  min-height: 0;
+  width: 100%;
+  flex: 1;
+  overflow: auto;
+  margin-top: 24px;
+}
+
+.dashboard-notifications-list > li + li {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 @media (max-width: 768px) {
@@ -353,9 +405,15 @@ const tabTitle = computed(() => visibleTabs.value.find((t) => t.key === tab.valu
   }
 
   .dashboard-side {
+    height: auto;
     width: 100%;
     border-right: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .dashboard-main {
+    height: 0;
+    flex: 1;
   }
 
   .dashboard-nav {
