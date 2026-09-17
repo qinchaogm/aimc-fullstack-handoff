@@ -97,7 +97,6 @@ function paperInner(data: FormLike) {
       </colgroup>
       <tr><td class="lab">项目名称</td><td colspan="5">${esc(data.projectName)}</td></tr>
       <tr><td class="lab">单位全称</td><td colspan="5">${esc(data.organizationName)}</td></tr>
-      <tr><td class="lab">单位全称</td><td colspan="5">${esc(data.organizationName)}</td></tr>
       <tr>
         <td class="lab">项目负责人</td>
         <td colspan="2">${esc(data.leaderName)}</td>

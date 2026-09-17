@@ -224,13 +224,13 @@ function awardText(reg: Registration) {
               <button class="btn-nova inline-flex h-9 items-center gap-1 rounded-lg px-3 text-sm" @click="downloadRegistrationForm(project)">
                 <Download class="size-3.5" /> 下载报名表
               </button>
-              <RouterLink
+              <!-- <RouterLink
                 v-if="!closed"
                 to="/apply"
                 class="inline-flex h-9 items-center rounded-lg border border-white/15 px-3 text-sm text-slate-200 hover:bg-white/5"
               >
                 修改报名信息
-              </RouterLink>
+              </RouterLink> -->
               <button class="rounded-lg px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5" @click="showTable = !showTable">
                 {{ showTable ? "收起表格" : "预览表格" }}
               </button>

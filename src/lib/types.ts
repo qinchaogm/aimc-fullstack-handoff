@@ -76,6 +76,8 @@ export interface Registration {
   leaderName: string;
   /** 负责人职务 */
   leaderTitle: string;
+  /** 单位所在省 / 自治区 / 直辖市 */
+  organizationProvince?: string;
   /** 单位所在市 */
   organizationCity: string;
   /** 单位所在区 */

@@ -7,11 +7,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
-  Key,
   Plus,
   Rocket,
   Trash2,
-  Users,
 } from "lucide-vue-next";
 import SiteHeader from "@/components/SiteHeader.vue";
 import SiteFooter from "@/components/SiteFooter.vue";
@@ -24,6 +22,7 @@ import ApplyGuide from "@/components/apply/ApplyGuide.vue";
 import type { GuideStatus } from "@/components/apply/ApplyGuide.vue";
 import {
   APPLY_OPTIONS,
+  citiesOfProvince,
   CONTEST,
   composeOrganizationAddress,
   districtsOf,
@@ -45,7 +44,7 @@ const STEPS = [
       { id: "projectContent", label: "项目内容" },
       { id: "organizationName", label: "单位全称" },
       { id: "isDian", label: "是否是上海电气内部企业" },
-      { id: "organizationAddress", label: "单位地址（市、区、详细地址）" },
+      { id: "organizationAddress", label: "单位地址（省、市、区、详细地址）" },
     ],
   },
   {
@@ -57,7 +56,7 @@ const STEPS = [
       { id: "leaderTitle", label: "负责人职务" },
       { id: "contactName", label: "单位联系人" },
       { id: "contactPhone", label: "联系人电话" },
-      { id: "members", label: "参赛小组成员（选填）" },
+      { id: "members", label: "参赛小组成员" },
     ],
   },
   {
@@ -79,6 +78,13 @@ const didUpdate = ref(false);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const errors = reactive<Record<string, string | undefined>>({});
 
+function createLeaderMember(
+  name = store.currentUser?.username ?? "",
+  phone = store.currentUser?.phone ?? "",
+): TeamMember {
+  return { name, age: "", gender: "", phone, email: "" };
+}
+
 const data = reactive({
   registrationDate: new Date().toISOString().slice(0, 10),
   projectName: "",
@@ -86,13 +92,14 @@ const data = reactive({
   isDian: "否",
   leaderName: store.currentUser?.username ?? "",
   leaderTitle: store.currentUser?.title ?? "",
+  organizationProvince: "",
   organizationCity: "",
   organizationDistrict: "",
   organizationDetail: "",
   organizationAddress: "",
   direction: "",
   projectContent: "",
-  members: [] as TeamMember[],
+  members: [createLeaderMember()] as TeamMember[],
   contactName: store.currentUser?.username ?? "",
   contactPhone: store.currentUser?.phone ?? "",
 });
@@ -110,15 +117,19 @@ function fillFrom(reg: Registration) {
   data.isDian = reg.isDian ?? "否";
   data.leaderName = reg.leaderName;
   data.leaderTitle = reg.leaderTitle;
-  data.organizationCity = reg.organizationCity;
-  data.organizationDistrict = reg.organizationDistrict;
+  data.organizationProvince = reg.organizationProvince ?? "";
+  data.organizationCity = data.organizationProvince ? reg.organizationCity : "";
+  data.organizationDistrict = data.organizationProvince ? reg.organizationDistrict : "";
   data.organizationDetail = reg.organizationDetail;
   data.organizationAddress = reg.organizationAddress;
   data.direction = reg.direction;
   data.projectContent = reg.projectContent;
-  data.members = reg.members.map((m) => ({ ...m }));
   data.contactName = reg.contactName;
   data.contactPhone = reg.contactPhone;
+  data.members = reg.members.map((m) => ({ ...m }));
+  if (!data.members.length) data.members = [createLeaderMember(reg.leaderName, reg.contactPhone)];
+  data.members[0].name = reg.leaderName;
+  data.members[0].phone = reg.contactPhone;
 }
 
 if (existing.value) {
@@ -126,11 +137,50 @@ if (existing.value) {
 } else if (APPLY_OPTIONS.directions.includes(requestedDirection)) {
   data.direction = requestedDirection;
 }
-const districts = computed(() => districtsOf(data.organizationCity));
+const districts = computed(() =>
+  data.organizationProvince && data.organizationCity
+    ? districtsOf(data.organizationCity)
+    : [],
+);
+const cities = computed(() => citiesOfProvince(data.organizationProvince));
 const current = computed(() => STEPS[step.value]);
 
 function clearError(key: string) {
   errors[key] = undefined;
+}
+
+function updateLeaderName(value: string) {
+  data.leaderName = value;
+  if (!data.members.length) data.members = [createLeaderMember(value)];
+  data.members[0].name = value;
+  clearError("leaderName");
+  clearError("members.0.name");
+}
+
+function updateMemberName(index: number, value: string) {
+  if (index === 0) {
+    updateLeaderName(value);
+    return;
+  }
+  data.members[index].name = value;
+}
+
+function updateContactPhone(value: string) {
+  const phone = value.replace(/\D/g, "").slice(0, 11);
+  data.contactPhone = phone;
+  if (!data.members.length) data.members = [createLeaderMember(data.leaderName, phone)];
+  data.members[0].phone = phone;
+  clearError("contactPhone");
+  clearError("members.0.phone");
+}
+
+function updateMemberPhone(index: number, value: string) {
+  const phone = value.replace(/\D/g, "").slice(0, 11);
+  if (index === 0) {
+    updateContactPhone(phone);
+    return;
+  }
+  data.members[index].phone = phone;
 }
 
 function addMember() {
@@ -142,6 +192,10 @@ function addMember() {
 }
 
 function removeMember(index: number) {
+  if (index === 0) {
+    ElMessage.warning("成员 1 为项目负责人，不能移除");
+    return;
+  }
   data.members.splice(index, 1);
 }
 
@@ -160,9 +214,9 @@ function collectErrors(keys: string[]) {
   }
   if (keys.includes("members")) {
     data.members.forEach((m, i) => {
-      const touched = [m.name, m.age, m.gender, m.phone, m.email].some((x) =>
-        x.trim(),
-      );
+      const touched =
+        i === 0 ||
+        [m.name, m.age, m.gender, m.phone, m.email].some((x) => x.trim());
       if (!touched) return;
       if (!m.name.trim()) next[`members.${i}.name`] = "请填写姓名";
       if (!m.age.trim() || Number.isNaN(Number(m.age)))
@@ -174,6 +228,8 @@ function collectErrors(keys: string[]) {
         next[`members.${i}.email`] = "邮箱不正确";
     });
   }
+  if (keys.includes("organizationProvince") && next.organizationProvince)
+    next.organizationProvince = "请选择省份";
   if (keys.includes("organizationCity") && next.organizationCity)
     next.organizationCity = "请选择市";
   if (keys.includes("organizationDistrict") && next.organizationDistrict)
@@ -196,6 +252,8 @@ function goNext() {
           "projectName",
           "projectContent",
           "organizationName",
+          "isDian",
+          "organizationProvince",
           "organizationCity",
           "organizationDistrict",
           "organizationDetail",
@@ -207,6 +265,7 @@ function goNext() {
     ElMessage.error("请完善本步必填信息后再继续");
     const firstKey = Object.keys(next)[0];
     const addressKeys = [
+      "organizationProvince",
       "organizationCity",
       "organizationDistrict",
       "organizationDetail",
@@ -225,13 +284,14 @@ function goNext() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function submit() {
+function collectSubmitPayload() {
   const next = collectErrors([
     "direction",
     "projectName",
     "projectContent",
     "isDian",
     "organizationName",
+    "organizationProvince",
     "organizationCity",
     "organizationDistrict",
     "organizationDetail",
@@ -244,22 +304,58 @@ function submit() {
   applyErrors(next);
   if (Object.keys(next).length) {
     ElMessage.error("请先完善全部必填信息");
-    return;
+    return null;
   }
   const members = data.members.filter((m) =>
     [m.name, m.age, m.gender, m.phone, m.email].some((x) => x.trim()),
   );
   const organizationAddress = composeOrganizationAddress(
+    data.organizationProvince,
     data.organizationCity,
     data.organizationDistrict,
     data.organizationDetail,
   );
-  const updating = !!existing.value;
-  const res = store.submitRegistration({
+  return {
     ...data,
     members,
     organizationAddress,
-  });
+  };
+}
+
+function saveRegistration() {
+  const payload = collectSubmitPayload();
+  if (!payload) return;
+  const res = store.submitRegistration(payload, { notify: false });
+  if (!res.ok) return ElMessage.error(res.error);
+  fillFrom(res.data);
+  ElMessage.success("保存成功");
+}
+
+async function confirmSubmit() {
+  try {
+    await ElMessageBox.confirm(
+      "每位参赛者仅可提交一次报名，提交后不可自行修改。请仔细核对全部信息，确认无误后再提交。",
+      "确认提交报名？",
+      {
+        confirmButtonText: "确认提交",
+        cancelButtonText: "再检查一下",
+        distinguishCancelAndClose: true,
+        closeOnClickModal: false,
+        customClass: "apply-submit-confirm",
+        type: "warning",
+      },
+    );
+  } catch {
+    return;
+  }
+  submit();
+}
+
+function submit() {
+  const payload = collectSubmitPayload();
+  if (!payload) return;
+  const updating = !!existing.value;
+  const res = store.submitRegistration(payload);
   if (!res.ok) return ElMessage.error(res.error);
   didUpdate.value = updating;
   done.value = res.data;
@@ -306,12 +402,14 @@ function fieldStatus(id: string): GuideStatus {
       return data.isDian ? "done" : "empty";
     case "organizationAddress":
       if (
+        errors.organizationProvince ||
         errors.organizationCity ||
         errors.organizationDistrict ||
         errors.organizationDetail
       )
         return "error";
-      return data.organizationCity &&
+      return data.organizationProvince &&
+        data.organizationCity &&
         data.organizationDistrict &&
         isFilled(data.organizationDetail)
         ? "done"
@@ -356,7 +454,7 @@ const guideItems = computed(() =>
     id: field.id,
     label: field.label,
     status: fieldStatus(field.id),
-    optional: field.id === "members",
+    optional: false,
   })),
 );
 
@@ -398,15 +496,16 @@ async function clearForm() {
   data.isDian = "否";
   data.leaderName = "";
   data.leaderTitle = "";
+  data.organizationProvince = "";
   data.organizationCity = "";
   data.organizationDistrict = "";
   data.organizationDetail = "";
   data.organizationAddress = "";
   data.direction = "";
   data.projectContent = "";
-  data.members = [];
   data.contactName = "";
   data.contactPhone = "";
+  data.members = [createLeaderMember(data.leaderName, data.contactPhone)];
   for (const k of Object.keys(errors)) errors[k] = undefined;
   step.value = 0;
   ElMessage.success("已清空表单");
@@ -472,13 +571,13 @@ async function clearForm() {
             <Download class="size-4" />
             下载报名表
           </button>
-          <button
+          <!-- <button
             v-if="store.contestStage === 'registration'"
             class="btn-nova-ghost inline-flex h-11 items-center rounded-xl px-6"
             @click="resumeEdit"
           >
             修改报名信息
-          </button>
+          </button> -->
         </div>
         <div class="mt-8 flex flex-wrap justify-center gap-3">
           <RouterLink
@@ -655,18 +754,35 @@ async function clearForm() {
                   id="organizationAddress"
                   label="单位地址"
                   required
-                  hint="先选择市、区，再填写街道门牌等详细地址。"
+                  hint="先选择省、市、区，再填写街道门牌等详细地址。"
                   :error="
+                    errors.organizationProvince ||
                     errors.organizationCity ||
                     errors.organizationDistrict ||
                     errors.organizationDetail
                   "
                 >
-                  <div class="grid gap-3 sm:grid-cols-2">
+                  <div class="grid gap-3 sm:grid-cols-3">
+                    <SelectField
+                      :model-value="data.organizationProvince"
+                      :options="APPLY_OPTIONS.provinces"
+                      placeholder="请选择省份"
+                      @update:model-value="
+                        data.organizationProvince = $event;
+                        data.organizationCity = '';
+                        data.organizationDistrict = '';
+                        clearError('organizationProvince');
+                        clearError('organizationCity');
+                        clearError('organizationDistrict');
+                      "
+                    />
                     <SelectField
                       :model-value="data.organizationCity"
-                      :options="APPLY_OPTIONS.cities.map((c) => c.value)"
-                      placeholder="请选择市"
+                      :options="cities"
+                      :placeholder="
+                        data.organizationProvince ? '请选择市' : '请先选择省份'
+                      "
+                      :disabled="!data.organizationProvince"
                       @update:model-value="
                         data.organizationCity = $event;
                         data.organizationDistrict = '';
@@ -678,9 +794,13 @@ async function clearForm() {
                       :model-value="data.organizationDistrict"
                       :options="districts"
                       :placeholder="
-                        data.organizationCity ? '请选择区' : '请先选择市'
+                        data.organizationProvince
+                          ? data.organizationCity
+                            ? '请选择区'
+                            : '请先选择市'
+                          : '请先选择省份'
                       "
-                      :disabled="!data.organizationCity"
+                      :disabled="!data.organizationProvince || !data.organizationCity"
                       @update:model-value="
                         data.organizationDistrict = $event;
                         clearError('organizationDistrict');
@@ -713,8 +833,7 @@ async function clearForm() {
                     :max-length="20"
                     placeholder="请输入项目负责人姓名"
                     @update:model-value="
-                      data.leaderName = $event;
-                      clearError('leaderName');
+                      updateLeaderName($event);
                     "
                   />
                 </Field>
@@ -761,10 +880,7 @@ async function clearForm() {
                     :model-value="data.contactPhone"
                     placeholder="请输入 11 位手机号"
                     @update:model-value="
-                      data.contactPhone = $event
-                        .replace(/\D/g, '')
-                        .slice(0, 11);
-                      clearError('contactPhone');
+                      updateContactPhone($event);
                     "
                   />
                 </Field>
@@ -776,7 +892,7 @@ async function clearForm() {
                     <div>
                       <p class="apply-field-label mb-0">参赛小组成员</p>
                       <p class="apply-field-hint">
-                        选填，0–{{ APPLY_OPTIONS.maxMembers }} 人，可跳过。
+                        成员 1 为项目负责人，姓名与上方项目负责人自动同步；可继续添加其他成员。
                       </p>
                     </div>
                     <button
@@ -788,19 +904,10 @@ async function clearForm() {
                       @click="addMember"
                     >
                       <Plus class="size-4" />
-                      添加成员
+                      添加其他成员
                     </button>
                   </div>
-                  <button
-                    v-if="data.members.length === 0"
-                    type="button"
-                    class="mt-4 flex w-full items-center gap-3 rounded-xl border border-dashed border-blue-400/30 bg-[#071018] px-4 py-4 text-left leading-6 text-slate-400 hover:border-blue-400/50 hover:bg-blue-500/10"
-                    @click="addMember"
-                  >
-                    <Users class="size-4" />
-                    暂无成员，可跳过；点击添加
-                  </button>
-                  <ul v-else class="mt-5 space-y-5">
+                  <ul class="mt-5 space-y-5">
                     <li
                       v-for="(m, i) in data.members"
                       :key="i"
@@ -808,9 +915,10 @@ async function clearForm() {
                     >
                       <div class="mb-4 flex items-center justify-between">
                         <p class="text-sm font-medium text-blue-50">
-                          成员 {{ i + 1 }}
+                          成员 {{ i + 1 }}{{ i === 0 ? "（项目负责人）" : "" }}
                         </p>
                         <button
+                          v-if="i > 0"
                           type="button"
                           class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
                           @click="removeMember(i)"
@@ -829,7 +937,7 @@ async function clearForm() {
                             :model-value="m.name"
                             :max-length="20"
                             placeholder="请输入姓名"
-                            @update:model-value="m.name = $event"
+                            @update:model-value="updateMemberName(i, $event)"
                           />
                         </Field>
                         <Field
@@ -866,7 +974,7 @@ async function clearForm() {
                             :model-value="m.phone"
                             placeholder="请输入 11 位手机号"
                             @update:model-value="
-                              m.phone = $event.replace(/\D/g, '').slice(0, 11)
+                              updateMemberPhone(i, $event)
                             "
                           />
                         </Field>
@@ -929,6 +1037,7 @@ async function clearForm() {
                     <dd class="text-blue-50">
                       {{
                         composeOrganizationAddress(
+                          data.organizationProvince,
                           data.organizationCity,
                           data.organizationDistrict,
                           data.organizationDetail,
@@ -954,7 +1063,9 @@ async function clearForm() {
                   </div>
                   <div class="flex gap-4">
                     <dt class="text-slate-400">负责人邮箱:</dt>
-                    <dd class="text-blue-50">需要新增</dd>
+                    <dd class="text-blue-50">
+                      {{ data.members[0]?.email || "未填写" }}
+                    </dd>
                   </div>
                   <div class="flex gap-4">
                     <dt class="text-slate-400">负责人职务:</dt>
@@ -1044,15 +1155,23 @@ async function clearForm() {
                   下一步
                   <ChevronRight class="size-4" />
                 </button>
-                <button
-                  v-else
-                  type="button"
-                  class="btn-nova inline-flex h-10 items-center gap-1 rounded-xl px-5"
-                  @click="submit"
-                >
-                  <Rocket class="size-4" />
-                  {{ existing ? "保存并覆盖报名信息" : "确认报名" }}
-                </button>
+                <div v-else class="flex flex-wrap items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    class="inline-flex h-10 items-center gap-1.5 rounded-lg border border-blue-400/30 bg-blue-500/10 px-5 text-[15px] font-semibold text-blue-100 hover:bg-blue-500/20"
+                    @click="saveRegistration"
+                  >
+                    保存
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-nova inline-flex h-10 items-center gap-1 rounded-xl px-5"
+                    @click="confirmSubmit"
+                  >
+                    <Rocket class="size-4" />
+                    提交
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import type { ScoreDimension } from "./types";
+import { CITY_DISTRICT_OPTIONS, PROVINCE_CITY_OPTIONS } from "./region-data";
 
 export function uniqueOrganizations(names: Array<string | undefined | null>) {
   return [...new Set(names.map((n) => (n ?? "").trim()).filter(Boolean))].sort((a, b) =>
@@ -327,6 +328,7 @@ export const SCHEDULE = [
 ];
 
 export const AWARDS = [
+  { level: "特等奖", count: 1, amount: "¥100,000", perks: "顶尖方案优先产业对接，组委会重点孵化与落地支持" },
   { level: "一等奖", count: 5, amount: "¥50,000", perks: "优秀作品有机会与企业签订框架协议，共同落地" },
   { level: "二等奖", count: 8, amount: "¥20,000", perks: "入围产业对接，持续优化产品与场景验证" },
   { level: "三等奖", count: 12, amount: "¥10,000", perks: "大赛荣誉证书，纳入后续合作备选" },
@@ -381,86 +383,19 @@ export const APPLY_OPTIONS = {
   genders: ["男", "女"],
   /** Soft cap for optional teammate rows. */
   maxMembers: 10,
-  cities: [
-    {
-      value: "上海市",
-      districts: [
-        "黄浦区",
-        "徐汇区",
-        "长宁区",
-        "静安区",
-        "普陀区",
-        "虹口区",
-        "杨浦区",
-        "浦东新区",
-        "闵行区",
-        "宝山区",
-        "嘉定区",
-        "金山区",
-        "松江区",
-        "青浦区",
-        "奉贤区",
-        "崇明区",
-      ],
-    },
-    {
-      value: "北京市",
-      districts: [
-        "东城区",
-        "西城区",
-        "朝阳区",
-        "海淀区",
-        "丰台区",
-        "石景山区",
-        "通州区",
-        "大兴区",
-        "昌平区",
-        "顺义区",
-      ],
-    },
-    {
-      value: "天津市",
-      districts: ["和平区", "河西区", "南开区", "河东区", "河北区", "红桥区", "滨海新区", "西青区", "东丽区"],
-    },
-    {
-      value: "深圳市",
-      districts: ["南山区", "福田区", "罗湖区", "宝安区", "龙岗区", "龙华区", "坪山区", "光明区"],
-    },
-    {
-      value: "广州市",
-      districts: ["天河区", "越秀区", "海珠区", "荔湾区", "白云区", "黄埔区", "番禺区", "南沙区"],
-    },
-    {
-      value: "杭州市",
-      districts: ["西湖区", "上城区", "拱墅区", "滨江区", "余杭区", "萧山区", "临平区", "钱塘区"],
-    },
-    {
-      value: "苏州市",
-      districts: ["姑苏区", "工业园区", "高新区", "吴中区", "相城区", "吴江区"],
-    },
-    {
-      value: "南京市",
-      districts: ["鼓楼区", "玄武区", "秦淮区", "建邺区", "雨花台区", "江宁区", "栖霞区"],
-    },
-    {
-      value: "成都市",
-      districts: ["武侯区", "青羊区", "锦江区", "成华区", "金牛区", "高新区", "双流区", "郫都区"],
-    },
-    {
-      value: "武汉市",
-      districts: ["武昌区", "江汉区", "江岸区", "硚口区", "汉阳区", "洪山区", "东湖高新"],
-    },
-    {
-      value: "西安市",
-      districts: ["雁塔区", "碑林区", "莲湖区", "未央区", "灞桥区", "高新区", "长安区"],
-    },
-  ],
+  provinces: Object.keys(PROVINCE_CITY_OPTIONS),
+  cities: Object.entries(CITY_DISTRICT_OPTIONS).map(([value, districts]) => ({ value, districts })),
 };
 
-export function composeOrganizationAddress(city: string, district: string, detail: string) {
-  return `${city}${district}${detail}`.replace(/\s+/g, " ").trim();
+export function citiesOfProvince(province: string) {
+  return PROVINCE_CITY_OPTIONS[province] ?? [];
+}
+
+export function composeOrganizationAddress(province: string, city: string, district: string, detail?: string) {
+  if (detail === undefined) return `${province}${city}${district}`.replace(/\s+/g, " ").trim();
+  return `${province}${city}${district}${detail}`.replace(/\s+/g, " ").trim();
 }
 
 export function districtsOf(city: string) {
-  return APPLY_OPTIONS.cities.find((c) => c.value === city)?.districts ?? [];
+  return CITY_DISTRICT_OPTIONS[city] ?? [];
 }

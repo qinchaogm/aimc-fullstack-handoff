@@ -1702,6 +1702,102 @@ html.dark .feedback-sheet .el-input__wrapper {
   transition: width 0.25s ease;
 }
 
+.apply-submit-confirm {
+  --el-messagebox-width: min(92vw, 32rem);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: 10px;
+  background: linear-gradient(145deg, rgba(7, 23, 37, 0.98), rgba(4, 14, 25, 0.98));
+  box-shadow: 0 20px 64px rgba(0, 0, 0, 0.46);
+}
+
+.apply-submit-confirm .el-message-box__header {
+  padding: 22px 22px 8px;
+}
+
+.apply-submit-confirm .el-message-box__title {
+  color: #e5eefb;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.apply-submit-confirm .el-message-box__headerbtn {
+  top: 20px;
+  right: 20px;
+}
+
+.apply-submit-confirm .el-message-box__close {
+  color: #94a3b8;
+  font-size: 18px;
+}
+
+.apply-submit-confirm .el-message-box__content {
+  align-items: flex-start;
+  padding: 12px 22px 20px;
+  color: #cbd5e1;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.75;
+}
+
+.apply-submit-confirm .el-message-box__status {
+  position: static;
+  margin: 4px 12px 0 0;
+  transform: none;
+  color: #fbbf24;
+  font-size: 22px !important;
+}
+
+.apply-submit-confirm .el-message-box__message {
+  padding-left: 0;
+}
+
+.apply-submit-confirm .el-message-box__message p {
+  margin: 0;
+}
+
+.apply-submit-confirm .el-message-box__btns {
+  gap: 10px;
+  padding: 0 22px 22px;
+}
+
+.apply-submit-confirm .el-message-box__btns .el-button {
+  min-width: 112px;
+  height: 40px;
+  border-radius: 8px;
+  border: 0;
+  background: rgba(15, 23, 42, 0.58);
+  color: #cbd5e1;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.16);
+}
+
+.apply-submit-confirm .el-message-box__btns .el-button:hover {
+  background: rgba(30, 41, 59, 0.78);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.28);
+}
+
+.apply-submit-confirm .el-message-box__btns .el-button--primary {
+  border: 0;
+  background: linear-gradient(105deg, #0e7490 0%, #0891b2 48%, #06b6d4 100%);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -8px 18px rgba(2, 20, 28, 0.34),
+    0 14px 32px -16px rgba(8, 145, 178, 0.95),
+    0 0 28px -14px rgba(34, 211, 238, 0.75);
+}
+
+.apply-submit-confirm .el-message-box__btns .el-button--primary:hover {
+  background: linear-gradient(105deg, #0891b2 0%, #06b6d4 58%, #22d3ee 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -8px 18px rgba(2, 20, 28, 0.28),
+    0 18px 38px -16px rgba(8, 145, 178, 1),
+    0 0 40px -12px rgba(34, 211, 238, 0.82);
+}
+
 @media (max-width: 1023px) {
   .apply-workspace {
     display: flex;

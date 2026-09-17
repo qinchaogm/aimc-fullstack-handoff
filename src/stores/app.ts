@@ -389,6 +389,7 @@ export const useAppStore = defineStore("app", () => {
 
   function submitRegistration(
     input: Omit<Registration, "id" | "userId" | "createdAt" | "status">,
+    options: { notify?: boolean } = {},
   ): Result<Registration> {
     const me = currentUser.value;
     if (!me) return { ok: false, error: "请先登录" };
@@ -403,6 +404,7 @@ export const useAppStore = defineStore("app", () => {
         isDian: input.isDian ?? "否",
         leaderName: input.leaderName,
         leaderTitle: input.leaderTitle,
+        organizationProvince: input.organizationProvince,
         organizationCity: input.organizationCity,
         organizationDistrict: input.organizationDistrict,
         organizationDetail: input.organizationDetail,
@@ -419,12 +421,14 @@ export const useAppStore = defineStore("app", () => {
       };
       registrations.value = registrations.value.map((r) => (r.id === prev.id ? next : r));
       persist();
-      pushNotification({
-        userId: me.id,
-        title: "报名信息已更新",
-        body: `项目「${next.projectName}」的报名信息已覆盖为最新内容。请重新下载报名表。`,
-        type: "contest",
-      });
+      if (options.notify !== false) {
+        pushNotification({
+          userId: me.id,
+          title: "报名信息已更新",
+          body: `项目「${next.projectName}」的报名信息已覆盖为最新内容。请重新下载报名表。`,
+          type: "contest",
+        });
+      }
       return { ok: true, data: next };
     }
     const reg: Registration = {
@@ -439,12 +443,14 @@ export const useAppStore = defineStore("app", () => {
     };
     registrations.value = [reg, ...registrations.value];
     persist();
-    pushNotification({
-      userId: me.id,
-      title: "您已经报名成功",
-      body: `项目「${reg.projectName}」已完成线上报名。请下载报名表。加盖企业公章后的报名表，请在提交作品阶段上传，并同时提交 PPT、文档、视频、代码等压缩包。`,
-      type: "contest",
-    });
+    if (options.notify !== false) {
+      pushNotification({
+        userId: me.id,
+        title: "您已经报名成功",
+        body: `项目「${reg.projectName}」已完成线上报名。请下载报名表。加盖企业公章后的报名表，请在提交作品阶段上传，并同时提交 PPT、文档、视频、代码等压缩包。`,
+        type: "contest",
+      });
+    }
     return { ok: true, data: reg };
   }
 
