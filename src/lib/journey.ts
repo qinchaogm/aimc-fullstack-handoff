@@ -146,7 +146,7 @@ export function journeyNodeState(
   return "pending";
 }
 
-export const AWARD_LEVELS = ["一等奖", "二等奖", "三等奖", "优秀奖"] as const;
+export const AWARD_LEVELS = ["特等奖", "一等奖", "二等奖", "三等奖", "优秀奖"] as const;
 
 /** 赛道方向+参赛项目名称+负责人，如 AI研发设计_基于CAD的3D设计工具_张子怡 */
 export function suggestedWorkBaseName(reg: Pick<Registration, "direction" | "projectName" | "leaderName">) {
